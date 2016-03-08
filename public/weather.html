@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>City Weather</title>
+		<link rel="stylesheet" type="text/css" href="styles.css">
+		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<script>
+$(document).ready(function() {
+	$("#cityfield").keyup(function() {
+		var everything;
+		var cityFieldVal = $("#cityfield").val();
+		if (cityFieldVal)
+		{
+			$.getJSON("../getcity?q=" + $("#cityfield").val(),function(data) {
+				if (data && data.length && data.length > 0)
+				{
+					everything = "<ul>";
+					$.each(data, function(i, item) {
+						everything += "<li>" + data[i].city + "</li>";
+					});
+					everything += "</ul>";
+					$("#txtHint").html(everything);
+					
+				}
+				else
+				{
+					$("#txtHint").empty();
+				}
+
+	  		  });
+		  }
+		else
+		{
+			$("#txtHint").empty();
+		}
+
+	});
+
+	$("#button").click(function(e){
+	  var value = $("#cityfield").val();
+	  e.preventDefault();
+	  $("#dispcity").text(value);
+	  
+	  var myurl= "https://api.wunderground.com/api/f87b2c137f3d4109/geolookup/conditions/q/UT/";
+	    myurl += value;
+	    myurl += ".json";
+	    $.ajax({
+	      url : myurl,
+	      dataType : "jsonp",
+	      success : function(parsed_json) {
+			  console.log(parsed_json);
+
+			try {
+				
+			var latitude = parsed_json['location']['lat'];
+			var longitude = parsed_json['location']['lon'];
+			
+			var qualityURL = "https://api.breezometer.com/baqi/?lat=" + latitude + "&lon=" + longitude +"&key=b0d427b684be46f1841d8811882fca5f";
+			$("#quality").html("Loading...");
+			$("#qualityVisual").css("background-color", "transparent");
+			$.getJSON(qualityURL, function(result)
+			{
+				console.log(result);
+				var quality = result['country_description'];
+				var qColor = result['country_color'];
+				$('#quality').html(quality);
+				$('#qualityVisual').css('background-color', qColor);
+			
+			});
+		
+			
+	        var location = parsed_json['location']['city'];
+	        var temp_string = parsed_json['current_observation']['temperature_string'];
+	        var current_weather = parsed_json['current_observation']['weather'];
+	        everything = "<ul>";
+	        everything += "<li>Location: "+location;
+	        everything += "<li>Temperature: "+temp_string;
+	        everything += "<li>Weather: "+current_weather;
+	        everything += "</ul>";
+	        $("#weather").html(everything);
+		}
+		catch(e)
+		{
+			$("#weather").html("Error: Invalid city name");
+			$("#quality").html("No Air Quality");
+			$("#qualityVisual").css("background-color", "transparent");
+		}
+	}
+	    });
+
+	});
+});
+</script>
+	</head>
+	<body>
+		<form>
+		Enter a Utah City: 
+		<input type='text' id='cityfield'/><br/>
+		Suggestion: <span id ='txtHint'>Empty</span>
+		<input id='button' type='submit' value = 'Submit'/>
+		</form>
+		<p>City</p>
+		<textarea id='dispcity'>No City</textarea>
+		<p>Current Weather</p>
+		<div id='weather'>No Weather</div>
+		<p>Current Air Quality</p>
+		<div id='qualityVisual'>&nbsp</div>
+		<div id='quality'>No Air Quality</div>
+
+	</body>
+</html>
